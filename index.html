@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Meu leitor RSS</title>
+    <style>
+   body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+#rss-feed {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Definir o estilo de cada item do feed */
+#rss-feed div {
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #fff;
+}
+
+#rss-feed div img {
+  max-width: 100%;
+  height: auto;
+}
+
+#rss-feed div h2 {
+  font-size: 1.5rem;
+  margin-top: 0;
+}
+
+#rss-feed div p {
+  font-size: 1rem;
+  color: #666;
+}
+
+#rss-feed div a {
+  display: block;
+  margin-top: 10px;
+  font-size: 1rem;
+  color: #007bff;
+}
+
+/* Estilo para dispositivos móveis */
+@media screen and (max-width: 600px) {
+  #rss-feed {
+    padding: 10px;
+  }
+
+  #rss-feed div {
+    padding: 5px;
+  }
+
+  #rss-feed div h2 {
+    font-size: 1.2rem;
+  }
+
+  #rss-feed div p {
+    font-size: 0.8rem;
+  }
+
+  #rss-feed div a {
+    font-size: 0.8rem;
+  }
+}
+   
+    </style>
+  </head>
+  <body>
+    <center><h1></h1></center>
+    <div id="rss-feed">
+      <div class="rss-item"></div>
+    </div>
+    
+    <script>
+// Criar um objeto XMLHttpRequest
+const xhr = new XMLHttpRequest();
+
+// Configurar o objeto para fazer uma requisição GET para o feed RSS
+xhr.open(
+  "GET",
+  "https://api.rss2json.com/v1/api.json?rss_url=https://www.noticiasaominuto.com/rss/mundo&api_key=36vkyefajtemeunatvuxyud59n3hq0tomyzcetjr"
+);
+
+// Definir as variáveis globais para acompanhar o índice do item atual e a lista de itens
+let currentItemIndex = 0;
+let items = [];
+
+// Definir a função de callback para processar a resposta da requisição
+xhr.onreadystatechange = function () {
+  if (this.readyState === 4) {
+    if (this.status === 200) {
+      // Converter o JSON da resposta em um objeto JavaScript
+      const response = JSON.parse(this.responseText);
+
+      // Verificar se o feed contém itens
+      if (response.items.length > 0) {
+        // Salvar a lista de itens na variável global
+        items = response.items;
+
+        // Exibir a primeira notícia
+        displayItem(currentItemIndex);
+      } else {
+        // Exibir mensagem de erro
+        handleError();
+      }
+    } else {
+      // Exibir mensagem de erro
+      handleError();
+    }
+  }
+};
+
+// Enviar a requisição
+xhr.send();
+
+  // Definir a função para exibir o item correspondente
+  function displayItem(index) {
+    const item = items[index];
+    const feedContainer = document.getElementById("rss-feed");
+
+    // Verificar se o elemento da notícia já foi criado
+    let article = feedContainer.querySelector(".article");
+    if (!article) {
+      // Se ainda não foi criado, criar o elemento da notícia e adicionar à página
+      article = document.createElement("div");
+      article.classList.add("article");
+      feedContainer.appendChild(article);
+    }
+
+    // Atualizar o conteúdo do elemento com as informações da notícia atual
+    const pubDate = new Date(item.pubDate);
+    let imageUrl = "";
+    if (item.enclosure !== undefined) {
+      imageUrl = item.enclosure.link;
+    } else if (
+      item["media:content"] !== undefined &&
+      item["media:content"].length > 0
+    ) {
+      imageUrl = item["media:content"][0].url;
+    }
+    article.innerHTML = `
+      <img src="${imageUrl}" />
+      <h2>${item.title}</h2>
+      <p>${item.categories[0]} - ${
+        pubDate.getMonth() + 1
+      }/${pubDate.getDate()}/${pubDate.getFullYear()} ${pubDate.getHours()}:${pubDate.getMinutes()}</p>
+      
+      <a href="${item.link}">Ler mais</a>
+    `;
+  }
+
+  // Definir a função para exibir o próximo item
+  function nextItem() {
+    currentItemIndex = (currentItemIndex + 1) % items.length;
+    // Remover o item atual da exibição
+    const feedContainer = document.getElementById("rss-feed");
+    const currentItem = feedContainer.querySelector(".article");
+    feedContainer.removeChild(currentItem);
+    // Exibir o próximo item
+    displayItem(currentItemIndex);
+  }
+
+  // Definir a função para exibir o item anterior
+  function prevItem() {
+    currentItemIndex = (currentItemIndex - 1 + items.length) % items.length;
+    // Remover o item atual da exibição
+    const feedContainer = document.getElementById("rss-feed");
+    const currentItem = feedContainer.querySelector(".article");
+    feedContainer.removeChild(currentItem);
+    // Exibir o item anterior
+    displayItem(currentItemIndex);
+  }
+
+  // Definir a função para tratar eventos de scroll
+  function handleScroll(event) {
+    const delta = event.wheelDelta || -event.detail;
+    if (delta < 0) {
+      // Scroll down
+      nextItem();
+    } else {
+      // Scroll up
+      prevItem();
+    }
+  }
+
+  // Adicionar o evento de scroll ao documento
+  document.addEventListener("wheel", handleScroll);
+  document.addEventListener("DOMMouseScroll", handleScroll);
+
+    </script>
+  </body>
+</html>
